@@ -1,9 +1,9 @@
 
 <!DOCTYPE html>
-<html lang='en'>
+<html lang="en">
 <head>
-<meta charset='UTF-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Markel Services Dashboard</title>
 <style>
 :root {
@@ -18,13 +18,13 @@
     --deg-bg: #f59e0b;
     --deg-fg: #ffffff;
 }
-body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; }
 header { padding: 24px 16px; border-bottom: 1px solid var(--border); }
 h1 { margin: 0 0 8px; }
 .ts { color: var(--muted); }
-main { width: 100%; margin: 0; padding: 16px; }
-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
-th, td { padding: 10px; text-align: left; border: 1px solid var(--border); }
+main { padding: 16px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px; border: 1px solid var(--border); text-align: left; }
 th { background-color: #f3f4f6; font-weight: 700; font-size: 16px; }
 tr:nth-child(even) { background-color: #f9fafb; }
 tr:hover { background-color: #e5e7eb; }
@@ -32,38 +32,23 @@ tr:hover { background-color: #e5e7eb; }
 .badge.up { background: var(--up-bg); color: var(--up-fg); }
 .badge.down { background: var(--down-bg); color: var(--down-fg); }
 .badge.degraded { background: var(--deg-bg); color: var(--deg-fg); }
-footer { color: var(--muted); padding: 12px 16px; border-top: 1px solid var(--border); text-align: center; }
+footer { color: var(--muted); padding: 12px; text-align: center; border-top: 1px solid var(--border); }
 </style>
 </head>
 <body>
 <header>
 <h1>Markel Services Dashboard</h1>
-<p class='ts'>Auto-refresh every 5 minutes</p>
+<p class="ts">Auto-refresh every 5 minutes</p>
 </header>
 <main>
 <table>
 <thead>
 <tr>
-<th>Service</th>
-<th>Status</th>
-<th>Description</th>
-<th>Link</th>
+<th>Service</th><th>Status</th><th>Description</th><th>Link</th>
 </tr>
 </thead>
-<tbody>
-<tr><td>Azure Status</td><td data-service="azure"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.azure.com" target="_blank">View</a></td></tr>
-<tr><td>Azure DevOps</td><td data-service="azuredevops"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.dev.azure.com" target="_blank">View</a></td></tr>
-<tr><td>Azure Databricks</td><td data-service="databricks"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.azuredatabricks.net" target="_blank">View</a></td></tr>
-<tr><td>JFrog</td><td data-service="jfrog"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.jfrog.io" target="_blank">View</a></td></tr>
-<tr><td>Elastic</td><td data-service="elastic"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.elastic.co" target="_blank">View</a></td></tr>
-<tr><td>Octopus</td><td data-service="octopus"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.octopus.com" target="_blank">View</a></td></tr>
-<tr><td>Lucid</td><td data-service="lucid"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.lucid.co" target="_blank">View</a></td></tr>
-<tr><td>Jira Software</td><td data-service="jira"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.atlassian.com" target="_blank">View</a></td></tr>
-<tr><td>Confluence</td><td data-service="confluence"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.atlassian.com" target="_blank">View</a></td></tr>
-<tr><td>CucumberStudio</td><td data-service="cucumber"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.cucumberstudio.com" target="_blank">View</a></td></tr>
-<tr><td>Fivetran</td><td data-service="fivetran"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.fivetran.com" target="_blank">View</a></td></tr>
-<tr><td>Brainboard</td><td data-service="brainboard"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.brainboard.co" target="_blank">View</a></td></tr>
-<tr><td>Port</td><td data-service="port"><span class="badge">Loading...</span></td><td>Loading...</td><td><a href="https://status.port.io" target="_blank">View</a></td></tr>
+<tbody id="service-table">
+<!-- Rows will be populated dynamically -->
 </tbody>
 </table>
 </main>
@@ -71,66 +56,63 @@ footer { color: var(--muted); padding: 12px 16px; border-top: 1px solid var(--bo
 Last updated: <span id="last-updated"></span>
 </footer>
 <script>
-const services = {
-    azure: { url: 'https://status.azure.com/en-us/status', type: 'html' },
-    azuredevops: { url: 'https://status.dev.azure.com/', type: 'html' },
-    databricks: { url: 'https://status.azuredatabricks.net/api/v2/status.json', type: 'json' },
-    jfrog: { url: 'https://status.jfrog.io/api/v2/status.json', type: 'json' },
-    elastic: { url: 'https://status.elastic.co/api/v2/status.json', type: 'json' },
-    octopus: { url: 'https://status.octopus.com/api/v2/status.json', type: 'json' },
-    lucid: { url: 'https://status.lucid.co/api/v2/status.json', type: 'json' },
-    jira: { url: 'https://status.atlassian.com/api/v2/status.json', type: 'json' },
-    confluence: { url: 'https://status.atlassian.com/api/v2/status.json', type: 'json' },
-    cucumber: { url: 'https://status.cucumberstudio.com/api/v2/status.json', type: 'json' },
-    fivetran: { url: 'https://status.fivetran.com/api/v2/status.json', type: 'json' },
-    brainboard: { url: 'https://status.brainboard.co', type: 'html' },
-    port: { url: 'https://status.port.io/api/v2/status.json', type: 'json' }
-};
+const services = [
+    { name: "Azure Status", key: "azure", link: "https://status.azure.com" },
+    { name: "Azure DevOps", key: "azuredevops", link: "https://status.dev.azure.com" },
+    { name: "Azure Databricks", key: "databricks", link: "https://status.azuredatabricks.net" },
+    { name: "JFrog", key: "jfrog", link: "https://status.jfrog.io" },
+    { name: "Elastic", key: "elastic", link: "https://status.elastic.co" },
+    { name: "Octopus", key: "octopus", link: "https://status.octopus.com" },
+    { name: "Lucid", key: "lucid", link: "https://status.lucid.co" },
+    { name: "Jira Software", key: "jira", link: "https://status.atlassian.com" },
+    { name: "Confluence", key: "confluence", link: "https://status.atlassian.com" },
+    { name: "CucumberStudio", key: "cucumber", link: "https://status.cucumberstudio.com" },
+    { name: "Fivetran", key: "fivetran", link: "https://status.fivetran.com" },
+    { name: "Brainboard", key: "brainboard", link: "https://status.brainboard.co" },
+    { name: "Port", key: "port", link: "https://status.port.io" }
+];
 
-async function fetchStatus(service, config) {
+function renderTable() {
+    const tbody = document.getElementById('service-table');
+    tbody.innerHTML = '';
+    services.forEach(s => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${s.name}</td>
+            <td><span class="badge">Loading...</span></td>
+            <td>Loading...</td>
+            <td>${s.link}View</a></td>
+        </tr>`;
+    });
+}
+
+async function updateStatus() {
     try {
-        let statusText = 'Unknown';
-        let badgeClass = 'degraded';
-
-        if (config.type === 'json') {
-            const response = await fetch(config.url);
-            const data = await response.json();
-            statusText = data.status.description || 'Unknown';
-            badgeClass = statusText.includes('Operational') ? 'up' : (statusText.includes('Outage') ? 'down' : 'degraded');
-        } else if (config.type === 'html') {
-            const response = await fetch(config.url);
-            const text = await response.text();
-            if (text.includes('Operational')) {
-                statusText = 'All Systems Operational';
-                badgeClass = 'up';
-            } else if (text.includes('Outage')) {
-                statusText = 'Major Outage';
-                badgeClass = 'down';
-            } else if (text.includes('Degraded')) {
-                statusText = 'Degraded Performance';
-                badgeClass = 'degraded';
+        const response = await fetch('https://your-render-app.onrender.com/status');
+        const data = await response.json();
+        const rows = document.querySelectorAll('#service-table tr');
+        services.forEach((s, i) => {
+            const badge = rows[i].querySelector('.badge');
+            const descCell = rows[i].querySelectorAll('td')[2];
+            if (data[s.key]) {
+                badge.textContent = data[s.key].status;
+                badge.className = `badge ${data[s.key].badge}`;
+                descCell.textContent = data[s.key].status;
             } else {
-                statusText = 'Check site';
+                badge.textContent = 'Error';
+                badge.className = 'badge degraded';
+                descCell.textContent = 'Unavailable';
             }
-        }
-
-        const cell = document.querySelector(`td[data-service="${service}"] span`);
-        cell.textContent = statusText;
-        cell.className = `badge ${badgeClass}`;
-    } catch (error) {
-        console.error('Error fetching status for', service, error);
+        });
+        document.getElementById('last-updated').textContent = new Date().toLocaleString();
+    } catch (err) {
+        console.error('Error fetching status:', err);
     }
 }
 
-function updateAllStatuses() {
-    for (const [service, config] of Object.entries(services)) {
-        fetchStatus(service, config);
-    }
-    document.getElementById('last-updated').textContent = new Date().toLocaleString();
-}
-
-updateAllStatuses();
-setInterval(updateAllStatuses, 300000);
+renderTable();
+updateStatus();
+setInterval(updateStatus, 300000);
 </script>
 </body>
 </html>
