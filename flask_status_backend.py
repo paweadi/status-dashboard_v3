@@ -1,5 +1,7 @@
+
 from flask import Flask, jsonify
 import requests
+import os
 
 app = Flask(__name__)
 
@@ -20,32 +22,42 @@ services = {
 }
 
 def parse_html_status(text):
-    if "Operational" in text:
+    text_lower = text.lower()
+    if "operational" in text_lower:
         return "All Systems Operational", "up"
-    elif "Outage" in text:
+    elif "outage" in text_lower or "incident" in text_lower:
         return "Major Outage", "down"
-    elif "Degraded" in text:
+    elif "degraded" in text_lower or "partial" in text_lower:
         return "Degraded Performance", "degraded"
     else:
         return "Check site", "degraded"
 
-@app.route('/status', methods=['GET'])
+@app.route("/", methods=["GET"])
+def root():
+    return jsonify({"message": "Backend is running. Use /status for aggregated service status."})
+
+@app.route("/healthz", methods=["GET"])
+def health():
+    return "ok", 200
+
+@app.route("/status", methods=["GET"])
 def get_status():
     results = {}
     for service, config in services.items():
         try:
+            r = requests.get(config["url"], timeout=10)
             if config["type"] == "json":
-                r = requests.get(config["url"], timeout=10)
                 data = r.json()
                 status_text = data.get("status", {}).get("description", "Unknown")
-                badge_class = "up" if "Operational" in status_text else ("down" if "Outage" in status_text else "degraded")
+                badge_class = "up" if "operational" in status_text.lower() else (
+                    "down" if "outage" in status_text.lower() else "degraded")
             else:
-                r = requests.get(config["url"], timeout=10)
                 status_text, badge_class = parse_html_status(r.text)
             results[service] = {"status": status_text, "badge": badge_class}
         except Exception as e:
             results[service] = {"status": "Error", "badge": "degraded", "error": str(e)}
     return jsonify(results)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # Use Render's PORT env
+    app.run(host="0.0.0.0", port=port)
