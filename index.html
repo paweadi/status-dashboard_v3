@@ -88,7 +88,7 @@ function renderTable() {
 
 async function updateStatus() {
     try {
-        const response = await fetch('https://your-render-app.onrender.com/status');
+        const response = await fetch('https://status-dashboard-v3.onrender.com/status');
         const data = await response.json();
         const rows = document.querySelectorAll('#service-table tr');
         services.forEach((s, i) => {
